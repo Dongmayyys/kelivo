@@ -28,6 +28,7 @@ class PreparedGeneration {
   final Future<String> Function(String, Map<String, dynamic>)? onToolCall;
   final bool hasBuiltInSearch;
   final List<String> lastUserImagePaths;
+  final int worldBookTriggeredCount;
 
   PreparedGeneration({
     required this.apiMessages,
@@ -35,6 +36,7 @@ class PreparedGeneration {
     this.onToolCall,
     required this.hasBuiltInSearch,
     required this.lastUserImagePaths,
+    this.worldBookTriggeredCount = 0,
   });
 }
 
@@ -156,7 +158,7 @@ class MessageGenerationService {
       apiMessages,
       assistantId,
     );
-    await messageBuilderService.injectWorldBookPrompts(
+    final worldBookTriggeredCount = await messageBuilderService.injectWorldBookPrompts(
       apiMessages,
       assistantId,
     );
@@ -183,6 +185,7 @@ class MessageGenerationService {
       onToolCall: onToolCall,
       hasBuiltInSearch: hasBuiltInSearch,
       lastUserImagePaths: lastUserImagePaths,
+      worldBookTriggeredCount: worldBookTriggeredCount,
     );
   }
 

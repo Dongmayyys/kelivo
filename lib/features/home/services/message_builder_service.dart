@@ -547,7 +547,8 @@ class MessageBuilderService {
   }
 
   /// Inject world book (lorebook) entries into apiMessages.
-  Future<void> injectWorldBookPrompts(
+  /// Returns the number of triggered entries.
+  Future<int> injectWorldBookPrompts(
     List<Map<String, dynamic>> apiMessages,
     String? assistantId,
   ) async {
@@ -572,13 +573,13 @@ class MessageBuilderService {
         );
       }
 
-      if (all.isEmpty || activeBookIds.isEmpty) return;
+      if (all.isEmpty || activeBookIds.isEmpty) return 0;
 
       final activeSet = activeBookIds.toSet();
       final books = all
           .where((b) => b.enabled && activeSet.contains(b.id))
           .toList(growable: false);
-      if (books.isEmpty) return;
+      if (books.isEmpty) return 0;
 
       String extractContextForDepth(int scanDepth) {
         final depth = scanDepth <= 0 ? 1 : scanDepth;
@@ -643,7 +644,7 @@ class MessageBuilderService {
         }
       }
 
-      if (triggered.isEmpty) return;
+      if (triggered.isEmpty) return 0;
 
       triggered.sort((a, b) {
         final pa = a.entry.priority;
@@ -795,7 +796,10 @@ class MessageBuilderService {
           );
         }
       }
-    } catch (_) {}
+      return triggered.length;
+    } catch (_) {
+      return 0;
+    }
   }
 
   /// Helper to append content to the system message (or create one if missing).

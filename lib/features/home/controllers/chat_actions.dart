@@ -235,6 +235,11 @@ class ChatActions {
         settings: settings,
       );
 
+      // Store world book triggered count for UI display
+      if (prepared.worldBookTriggeredCount > 0) {
+        streamController.worldBookCounts[assistantMessage.id] = prepared.worldBookTriggeredCount;
+      }
+
       // Execute generation
       final ctx = messageGenerationService.buildGenerationContext(
         assistantMessage: assistantMessage,
@@ -367,6 +372,11 @@ class ChatActions {
       lastUserImagePaths: prepared.lastUserImagePaths,
       settings: settings,
     );
+
+    // Store world book triggered count for UI display
+    if (prepared.worldBookTriggeredCount > 0) {
+      streamController.worldBookCounts[assistantMessage.id] = prepared.worldBookTriggeredCount;
+    }
 
     // Execute generation
     final ctx = messageGenerationService.buildGenerationContext(

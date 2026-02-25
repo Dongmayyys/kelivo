@@ -200,6 +200,7 @@ class HomePageController extends ChangeNotifier {
   Map<String, stream_ctrl.ReasoningData> get reasoning => _streamController.reasoning;
   Map<String, List<stream_ctrl.ReasoningSegmentData>> get reasoningSegments => _streamController.reasoningSegments;
   Map<String, List<ToolUIPart>> get toolParts => _streamController.toolParts;
+  Map<String, int> get worldBookCounts => _streamController.worldBookCounts;
 
   /// Lightweight notifier for streaming content updates.
   /// Use this with ValueListenableBuilder in MessageListView to avoid full page rebuilds.

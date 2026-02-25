@@ -97,6 +97,8 @@ class ChatMessageWidget extends StatefulWidget {
   final VoidCallback? onToggleTranslation;
   // MCP tool calls/results mixed-in cards
   final List<ToolUIPart>? toolParts;
+  // World book triggered entry count (in-memory only)
+  final int worldBookTriggeredCount;
   // Hide streaming dots when pinned globally
   final bool hideStreamingIndicator;
   // Whether files are currently being processed
@@ -135,6 +137,7 @@ class ChatMessageWidget extends StatefulWidget {
     this.translationExpanded = true,
     this.onToggleTranslation,
     this.toolParts,
+    this.worldBookTriggeredCount = 0,
     this.hideStreamingIndicator = false,
     this.isProcessingFiles = false,
   });
@@ -1512,12 +1515,23 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
             ),
             ),
           ),
-          // Sources summary card (tap to open full citations)
-          if (_latestSearchItems().isNotEmpty) ...[
+          // Citation summary cards row (search + world book)
+          if (_latestSearchItems().isNotEmpty || (widget.worldBookTriggeredCount > 0 && !widget.message.isStreaming)) ...[
             const SizedBox(height: 8),
-            _SourcesSummaryCard(
-              count: _latestSearchItems().length,
-              onTap: () => _showCitationsSheet(_latestSearchItems()),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (_latestSearchItems().isNotEmpty)
+                  _SourcesSummaryCard(
+                    count: _latestSearchItems().length,
+                    onTap: () => _showCitationsSheet(_latestSearchItems()),
+                  ),
+                if (widget.worldBookTriggeredCount > 0 && !widget.message.isStreaming)
+                  _WorldBookSummaryCard(
+                    count: widget.worldBookTriggeredCount,
+                  ),
+              ],
             ),
           ],
           // Action buttons (hidden while generating)
@@ -2751,9 +2765,38 @@ class _SourcesSummaryCard extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Lucide.BookOpen, size: 16, color: cs.secondary),
+          Icon(Lucide.Globe, size: 16, color: cs.secondary),
           const SizedBox(width: 8),
           Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.secondary)),
+        ],
+      ),
+    );
+  }
+}
+
+class _WorldBookSummaryCard extends StatelessWidget {
+  const _WorldBookSummaryCard({required this.count});
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    final label = l10n.chatMessageWidgetCitationsCount(count);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: cs.tertiaryContainer.withOpacity(
+          Theme.of(context).brightness == Brightness.dark ? 0.25 : 0.30,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Lucide.BookOpen, size: 16, color: cs.tertiary),
+          const SizedBox(width: 8),
+          Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.tertiary)),
         ],
       ),
     );
