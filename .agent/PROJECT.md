@@ -19,7 +19,7 @@
 - 开发启动: `flutter run` (加 `-d windows`/`-d chrome`/`-d <device>` 指定平台)
 - 构建: `flutter build apk` / `flutter build windows` / `flutter build ios`
 - 构建 (仅 arm64): `flutter build apk --release --split-per-abi --target-platform android-arm64`
-- 本地调试: `$env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-17.0.18.8-hotspot"; flutter run -d <device_id>`
+- 本地调试: `flutter run -d <device_id>`（JAVA_HOME 已设为用户级环境变量 `D:\develop\jdk-17`）
 - 测试: `flutter test`
 - Lint: `flutter analyze`
 - 代码生成 (Hive adapters): `flutter pub run build_runner build`
