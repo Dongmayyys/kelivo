@@ -517,6 +517,8 @@
   "chatMessageWidgetCannotOpenUrl": "無法開啟連結: {url}",
   "chatMessageWidgetOpenLinkError": "開啟連結失敗",
   "chatMessageWidgetCitationsTitle": "引用（共{count}條）",
+  "chatMessageWidgetSearchCitationsTitle": "搜索引用（共{count}條）",
+  "chatMessageWidgetWorldBookCitationsTitle": "世界書引用（共{count}條）",
   "chatMessageWidgetRegenerateTooltip": "重新生成",
   "chatMessageWidgetRegenerateConfirmTitle": "確認重新生成",
   "chatMessageWidgetRegenerateConfirmContent": "重新生成將會覆蓋此訊息之後的所有訊息，且無法撤銷。確定要繼續嗎？",

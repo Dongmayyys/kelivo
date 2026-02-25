@@ -70,7 +70,6 @@ class MessageListView extends StatelessWidget {
     required this.reasoning,
     required this.reasoningSegments,
     required this.toolParts,
-    required this.worldBookCounts,
     required this.translations,
     required this.selecting,
     required this.selectedItems,
@@ -103,7 +102,6 @@ class MessageListView extends StatelessWidget {
   final Map<String, stream_ctrl.ReasoningData> reasoning;
   final Map<String, List<stream_ctrl.ReasoningSegmentData>> reasoningSegments;
   final Map<String, List<ToolUIPart>> toolParts;
-  final Map<String, int> worldBookCounts;
   final Map<String, TranslationUiState> translations;
   final bool selecting;
   final Set<String> selectedItems;
@@ -525,7 +523,6 @@ class MessageListView extends StatelessWidget {
         }
       },
       toolParts: message.role == 'assistant' ? toolParts[message.id] : null,
-      worldBookTriggeredCount: message.role == 'assistant' ? (worldBookCounts[message.id] ?? 0) : 0,
       reasoningSegments: message.role == 'assistant'
           ? (() {
               final segments = reasoningSegments[message.id];

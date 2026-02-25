@@ -679,6 +679,22 @@
       }
     }
   },
+  "chatMessageWidgetSearchCitationsTitle": "Search Citations ({count})",
+  "@chatMessageWidgetSearchCitationsTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chatMessageWidgetWorldBookCitationsTitle": "World Book Citations ({count})",
+  "@chatMessageWidgetWorldBookCitationsTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "chatMessageWidgetRegenerateTooltip": "Regenerate",
   "chatMessageWidgetRegenerateConfirmTitle": "Confirm Regenerate",
   "chatMessageWidgetRegenerateConfirmContent": "Regenerating will overwrite all messages after this one and cannot be undone. Are you sure?",

@@ -1597,6 +1597,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String chatMessageWidgetSearchCitationsTitle(int count) {
+    return 'Search Citations ($count)';
+  }
+
+  @override
+  String chatMessageWidgetWorldBookCitationsTitle(int count) {
+    return 'World Book Citations ($count)';
+  }
+
+  @override
   String get chatMessageWidgetRegenerateTooltip => 'Regenerate';
 
   @override

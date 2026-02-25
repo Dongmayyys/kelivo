@@ -103,10 +103,6 @@ class StreamController {
   final Map<String, String> _geminiThoughtSigs = <String, String>{};
   Map<String, String> get geminiThoughtSigs => _geminiThoughtSigs;
 
-  /// World book triggered entry counts per assistant message.
-  final Map<String, int> _worldBookCounts = <String, int>{};
-  Map<String, int> get worldBookCounts => _worldBookCounts;
-
   // ============================================================================
   // Throttle State
   // ============================================================================
@@ -183,7 +179,6 @@ class StreamController {
     _reasoningSegments.remove(messageId);
     _toolParts.remove(messageId);
     _geminiThoughtSigs.remove(messageId);
-    _worldBookCounts.remove(messageId);
     _cleanupStreamTimers(messageId);
   }
 
@@ -193,7 +188,6 @@ class StreamController {
     _reasoningSegments.clear();
     _toolParts.clear();
     _geminiThoughtSigs.clear();
-    _worldBookCounts.clear();
     _cancelAllTimers();
     streamingContentNotifier.clear();
   }

@@ -3077,6 +3077,18 @@ abstract class AppLocalizations {
   /// **'Citations ({count})'**
   String chatMessageWidgetCitationsTitle(int count);
 
+  /// No description provided for @chatMessageWidgetSearchCitationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Citations ({count})'**
+  String chatMessageWidgetSearchCitationsTitle(int count);
+
+  /// No description provided for @chatMessageWidgetWorldBookCitationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'World Book Citations ({count})'**
+  String chatMessageWidgetWorldBookCitationsTitle(int count);
+
   /// No description provided for @chatMessageWidgetRegenerateTooltip.
   ///
   /// In en, this message translates to:

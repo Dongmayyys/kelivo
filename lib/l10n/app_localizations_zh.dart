@@ -1552,6 +1552,16 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String chatMessageWidgetSearchCitationsTitle(int count) {
+    return '搜索引用（共$count条）';
+  }
+
+  @override
+  String chatMessageWidgetWorldBookCitationsTitle(int count) {
+    return '世界书引用（共$count条）';
+  }
+
+  @override
   String get chatMessageWidgetRegenerateTooltip => '重新生成';
 
   @override
@@ -5665,6 +5675,16 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }
 
   @override
+  String chatMessageWidgetSearchCitationsTitle(int count) {
+    return '搜索引用（共$count条）';
+  }
+
+  @override
+  String chatMessageWidgetWorldBookCitationsTitle(int count) {
+    return '世界书引用（共$count条）';
+  }
+
+  @override
   String get chatMessageWidgetRegenerateTooltip => '重新生成';
 
   @override
@@ -9722,6 +9742,16 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String chatMessageWidgetCitationsTitle(int count) {
     return '引用（共$count條）';
+  }
+
+  @override
+  String chatMessageWidgetSearchCitationsTitle(int count) {
+    return '搜索引用（共$count條）';
+  }
+
+  @override
+  String chatMessageWidgetWorldBookCitationsTitle(int count) {
+    return '世界書引用（共$count條）';
   }
 
   @override

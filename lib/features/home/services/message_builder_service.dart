@@ -547,8 +547,8 @@ class MessageBuilderService {
   }
 
   /// Inject world book (lorebook) entries into apiMessages.
-  /// Returns the number of triggered entries.
-  Future<int> injectWorldBookPrompts(
+  /// Returns a list of triggered entry details for persistence.
+  Future<List<Map<String, dynamic>>> injectWorldBookPrompts(
     List<Map<String, dynamic>> apiMessages,
     String? assistantId,
   ) async {
@@ -573,13 +573,13 @@ class MessageBuilderService {
         );
       }
 
-      if (all.isEmpty || activeBookIds.isEmpty) return 0;
+      if (all.isEmpty || activeBookIds.isEmpty) return const [];
 
       final activeSet = activeBookIds.toSet();
       final books = all
           .where((b) => b.enabled && activeSet.contains(b.id))
           .toList(growable: false);
-      if (books.isEmpty) return 0;
+      if (books.isEmpty) return const [];
 
       String extractContextForDepth(int scanDepth) {
         final depth = scanDepth <= 0 ? 1 : scanDepth;
@@ -625,7 +625,7 @@ class MessageBuilderService {
       }
 
       final contextCache = <int, String>{};
-      final triggered = <({WorldBookEntry entry, int seq})>[];
+      final triggered = <({WorldBookEntry entry, String bookName, int seq})>[];
       int seq = 0;
 
       for (final book in books) {
@@ -638,13 +638,13 @@ class MessageBuilderService {
             () => extractContextForDepth(depth),
           );
           if (isTriggered(entry, ctx)) {
-            triggered.add((entry: entry, seq: seq));
+            triggered.add((entry: entry, bookName: book.name, seq: seq));
           }
           seq++;
         }
       }
 
-      if (triggered.isEmpty) return 0;
+      if (triggered.isEmpty) return const [];
 
       triggered.sort((a, b) {
         final pa = a.entry.priority;
@@ -796,9 +796,13 @@ class MessageBuilderService {
           );
         }
       }
-      return triggered.length;
+      return triggered.map((t) => <String, dynamic>{
+        'name': t.entry.name,
+        'bookName': t.bookName,
+        'keywords': t.entry.keywords,
+      }).toList();
     } catch (_) {
-      return 0;
+      return const [];
     }
   }
 

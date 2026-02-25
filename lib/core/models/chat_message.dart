@@ -58,6 +58,11 @@ class ChatMessage extends HiveObject {
   @HiveField(15)
   final int version;
 
+  /// Arbitrary per-message metadata (JSON encoded).
+  /// Used for world book trigger info, generation params, etc.
+  @HiveField(16)
+  final String? metadataJson;
+
   ChatMessage({
     String? id,
     required this.role,
@@ -75,6 +80,7 @@ class ChatMessage extends HiveObject {
     this.reasoningSegmentsJson,
     String? groupId,
     int? version,
+    this.metadataJson,
   })  : id = id ?? const Uuid().v4(),
         timestamp = timestamp ?? DateTime.now(),
         groupId = groupId ?? id,
@@ -97,6 +103,7 @@ class ChatMessage extends HiveObject {
     String? reasoningSegmentsJson,
     String? groupId,
     int? version,
+    String? metadataJson,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -115,6 +122,7 @@ class ChatMessage extends HiveObject {
       reasoningSegmentsJson: reasoningSegmentsJson ?? this.reasoningSegmentsJson,
       groupId: groupId ?? this.groupId,
       version: version ?? this.version,
+      metadataJson: metadataJson ?? this.metadataJson,
     );
   }
 
@@ -136,6 +144,7 @@ class ChatMessage extends HiveObject {
       'reasoningSegmentsJson': reasoningSegmentsJson,
       'groupId': groupId,
       'version': version,
+      'metadataJson': metadataJson,
     };
   }
 
@@ -161,6 +170,7 @@ class ChatMessage extends HiveObject {
       reasoningSegmentsJson: json['reasoningSegmentsJson'] as String?,
       groupId: json['groupId'] as String?,
       version: (json['version'] as int?) ?? 0,
+      metadataJson: json['metadataJson'] as String?,
     );
   }
 }

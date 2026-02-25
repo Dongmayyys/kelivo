@@ -97,8 +97,6 @@ class ChatMessageWidget extends StatefulWidget {
   final VoidCallback? onToggleTranslation;
   // MCP tool calls/results mixed-in cards
   final List<ToolUIPart>? toolParts;
-  // World book triggered entry count (in-memory only)
-  final int worldBookTriggeredCount;
   // Hide streaming dots when pinned globally
   final bool hideStreamingIndicator;
   // Whether files are currently being processed
@@ -137,7 +135,6 @@ class ChatMessageWidget extends StatefulWidget {
     this.translationExpanded = true,
     this.onToggleTranslation,
     this.toolParts,
-    this.worldBookTriggeredCount = 0,
     this.hideStreamingIndicator = false,
     this.isProcessingFiles = false,
   });
@@ -1516,7 +1513,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
             ),
           ),
           // Citation summary cards row (search + world book)
-          if (_latestSearchItems().isNotEmpty || (widget.worldBookTriggeredCount > 0 && !widget.message.isStreaming)) ...[
+          if (_latestSearchItems().isNotEmpty || (_worldBookCount() > 0 && !widget.message.isStreaming)) ...[
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -1527,9 +1524,10 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                     count: _latestSearchItems().length,
                     onTap: () => _showCitationsSheet(_latestSearchItems()),
                   ),
-                if (widget.worldBookTriggeredCount > 0 && !widget.message.isStreaming)
+                if (_worldBookCount() > 0 && !widget.message.isStreaming)
                   _WorldBookSummaryCard(
-                    count: widget.worldBookTriggeredCount,
+                    count: _worldBookCount(),
+                    onTap: () => _showWorldBookSheet(_worldBookEntries()),
                   ),
               ],
             ),
@@ -1771,6 +1769,33 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     return const <Map<String, dynamic>>[];
   }
 
+  /// Extract world book triggered count from message metadata (persisted in Hive).
+  int _worldBookCount() {
+    final json = widget.message.metadataJson;
+    if (json == null || json.isEmpty) return 0;
+    try {
+      final obj = jsonDecode(json) as Map<String, dynamic>;
+      final wb = obj['worldBook'] as Map<String, dynamic>?;
+      return (wb?['count'] as int?) ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// Extract world book triggered entries from message metadata.
+  List<Map<String, dynamic>> _worldBookEntries() {
+    final json = widget.message.metadataJson;
+    if (json == null || json.isEmpty) return const [];
+    try {
+      final obj = jsonDecode(json) as Map<String, dynamic>;
+      final wb = obj['worldBook'] as Map<String, dynamic>?;
+      final arr = wb?['entries'] as List? ?? const [];
+      return [for (final e in arr) if (e is Map) e.cast<String, dynamic>()];
+    } catch (_) {
+      return const [];
+    }
+  }
+
   void _showCitationsSheet(List<Map<String, dynamic>> items) {
     final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
@@ -1801,11 +1826,11 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                         padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
                         child: Row(
                           children: [
-                            Icon(Lucide.BookOpen, size: 18, color: cs.primary),
+                            Icon(Lucide.Globe, size: 18, color: cs.primary),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                l10n.chatMessageWidgetCitationsTitle(items.length),
+                                l10n.chatMessageWidgetSearchCitationsTitle(items.length),
                                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                               ),
                             ),
@@ -1873,11 +1898,11 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                 children: [
                   Row(
                     children: [
-                      Icon(Lucide.BookOpen, size: 18, color: cs.primary),
+                      Icon(Lucide.Globe, size: 18, color: cs.primary),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          l10n.chatMessageWidgetCitationsTitle(items.length),
+                          l10n.chatMessageWidgetSearchCitationsTitle(items.length),
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                         ),
                       ),
@@ -1902,6 +1927,134 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                       ),
                     ),
                   ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showWorldBookSheet(List<Map<String, dynamic>> entries) {
+    final cs = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    final bool isDesktop = defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.linux;
+
+    final title = l10n.chatMessageWidgetWorldBookCitationsTitle(entries.length);
+
+    Widget buildBody() {
+      return SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (int i = 0; i < entries.length; i++)
+                _WorldBookEntryRow(
+                  index: (i + 1).toString(),
+                  name: (entries[i]['name'] ?? '').toString(),
+                  bookName: (entries[i]['bookName'] ?? '').toString(),
+                  keywords: (entries[i]['keywords'] as List?)?.cast<String>() ?? const [],
+                ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (isDesktop) {
+      showDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        builder: (ctx) {
+          return Dialog(
+            elevation: 12,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 380, maxWidth: 460, maxHeight: 360),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Material(
+                  color: cs.surface,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
+                        child: Row(
+                          children: [
+                            Icon(Lucide.BookOpen, size: 18, color: cs.tertiary),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                title,
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                            Tooltip(
+                              message: l10n.mcpPageClose,
+                              child: IconButton(
+                                icon: Icon(Lucide.X, size: 18, color: cs.onSurface.withOpacity(0.75)),
+                                onPressed: () => Navigator.of(ctx).maybePop(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: buildBody(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      );
+      return;
+    }
+
+    // Mobile: bottom sheet
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: cs.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        final bottomInset = MediaQuery.viewInsetsOf(ctx).bottom;
+        return SafeArea(
+          child: FractionallySizedBox(
+            heightFactor: 0.5,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, bottomInset + 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Lucide.BookOpen, size: 18, color: cs.tertiary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(child: buildBody()),
                 ],
               ),
             ),
@@ -2775,28 +2928,106 @@ class _SourcesSummaryCard extends StatelessWidget {
 }
 
 class _WorldBookSummaryCard extends StatelessWidget {
-  const _WorldBookSummaryCard({required this.count});
+  const _WorldBookSummaryCard({required this.count, required this.onTap});
   final int count;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
     final label = l10n.chatMessageWidgetCitationsCount(count);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: cs.tertiaryContainer.withOpacity(
-          Theme.of(context).brightness == Brightness.dark ? 0.25 : 0.30,
-        ),
-        borderRadius: BorderRadius.circular(12),
+    return IosCardPress(
+      borderRadius: BorderRadius.circular(12),
+      baseColor: cs.tertiaryContainer.withOpacity(
+        Theme.of(context).brightness == Brightness.dark ? 0.25 : 0.30,
       ),
+      pressedScale: 1.0,
+      duration: const Duration(milliseconds: 260),
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Lucide.BookOpen, size: 16, color: cs.tertiary),
           const SizedBox(width: 8),
           Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.tertiary)),
+        ],
+      ),
+    );
+  }
+}
+
+class _WorldBookEntryRow extends StatelessWidget {
+  const _WorldBookEntryRow({
+    required this.index,
+    required this.name,
+    required this.bookName,
+    required this.keywords,
+  });
+  final String index;
+  final String name;
+  final String bookName;
+  final List<String> keywords;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 18,
+            height: 18,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: cs.tertiary.withOpacity(0.20),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            margin: const EdgeInsets.only(top: 2),
+            child: Text(index, style: const TextStyle(fontSize: 11)),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name.isNotEmpty ? name : '(unnamed)',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: cs.onSurface),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  bookName,
+                  style: TextStyle(fontSize: 12, color: cs.onSurface.withOpacity(0.55)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (keywords.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: keywords.map((kw) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: cs.tertiary.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        kw,
+                        style: TextStyle(fontSize: 11, color: cs.tertiary),
+                      ),
+                    )).toList(),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );

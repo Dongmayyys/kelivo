@@ -16,17 +16,17 @@
 - 备份完整性：`DataSync.prepareBackupFile` 导出 SharedPreferences 全量 snapshot（仅排除 5 个窗口状态 key）+ chats.json（含 toolEvents/geminiThoughtSigs）+ upload/ + images/ + avatars/，迁移签名不同的自编译版时数据无损
 - Debug/Release 共存方案：`build.gradle.kts` 中 debug buildType 设置 `applicationIdSuffix = ".dev"`，debug 版包名为 `com.psyche.kelivo.dev`，与正式版 `com.psyche.kelivo` 共存互不干扰。`AndroidManifest.xml` 的 `android:label` 改为 `@string/app_name` 资源引用，debug 显示 "Kelivo (Dev)"、release 显示 "Kelivo"
 - `main.dart` 的 `MaterialApp.title` 会在运行时通过 `Activity.setTaskDescription()` 覆盖 Manifest 的 app_name，导致多任务界面不显示 debug 后缀。已用 `kDebugMode` 三元表达式修复。桌面图标/系统设置仍读 Manifest（安装时写入，Flutter 碰不到）
+- `ChatApiService` 各后端对 system 消息的转换：OpenAI Chat Completions 原样保留 `role: system`；Responses API 提取为顶层 `instructions`；Anthropic 提取为顶层 `system`；Gemini 原生 API（`_sendGoogleStream`）原本遗漏了处理，system 消息被映射为 `user` 混入 `contents`，已修复为使用 Google 规范的 `systemInstruction` 字段（`2ec709b`）
 
 ## 代码陷阱与注意事项
 
-- `world_book_page.dart:_parseKeywordInput`: raw string `r'[\\n,，;；]'` 中 `\\` 被 RegExp 解释为字面反斜杠，`n` 为独立字符，导致关键词按 `\` 和 `n` 拆分而非按换行。正确写法 `r'[\n,，;；]'`。`_safeFileName` 的 `r'\\s+'` 同理
 - `message_builder_service.dart:611`: `RegExp(keyword, caseSensitive: ...)` 未传 `multiLine: true`，导致正则中 `^` 只匹配上下文字符串的开头而非每行开头
 - `world_book_page.dart:keywordChip`: 长关键词 Text 没有 `Flexible` 包裹，`Row(mainAxisSize: min)` 会无限撑开导致删除按钮被挤出屏幕
 - `scroll_controller.dart`: 8 秒自动滚动延迟实际功能鸡肋——Timer 结束后只设置标志位不触发滚动；AI 输出期间 `maxScrollExtent` 增长极快会迅速超出 56px 阈值
 - `chat_api_service.dart`: Gemini 3 Pro 只支持 `thinkingLevel: 'low' | 'high'`；Flash 支持 `'minimal' | 'low' | 'medium' | 'high'`；UI 5 档在 Pro 上多对一降级
 - `memory_store.dart`: SharedPreferences 存储全部记忆（JSON），有容量限制 (~1MB)，每次全量读写
 - `chat_input_bar.dart:1417`: 移动端回车发送通过 `textInputAction: TextInputAction.send` 实现
-- `assets/html/mark.html`: WebView 渲染使用 markdown-it（严格 CommonMark），CJK 文本中 `**"底气"**` 无法渲染粗体——当 `**` 右邻标点且左邻 CJK 字符时不满足左侧分隔符条件。Flutter 端 Dart `markdown` 包规则更宽松所以正常。可在 `renderMarkdown()` 前插入零宽空格预处理修复
+
 
 ## 模块间关系
 
@@ -46,6 +46,7 @@
 - 首次 `flutter run` 编译 Kelivo 约 25 分钟（含 Gradle 依赖下载），后续走缓存只需几十秒
 - 调试手机：荣耀 Magic7 Pro (PTP-AN10)，Android 16 (API 36)，arm64。
 - 项目级 `.vscode/settings.json` 关闭了 `editor.formatOnSave`（防止格式化产生无关 diff），该目录通过 `.git/info/exclude` 本地排除，不影响仓库
+- **不主动跑 `flutter analyze`**：IDE 内置 Dart Analysis Server 实时报错，终端再跑一遍纯属冗余。除非用户明确要求，否则改完代码直接交付
 
 ## 已尝试但放弃的方案
 
