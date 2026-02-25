@@ -1,6 +1,11 @@
 # LEARNINGS
 > 最后更新: 2026-02-25
 
+## 开发范围
+
+- **只关心安卓端**：修改代码时不要连带改桌面端（`lib/desktop/`）、iOS、Web 等不使用的平台。多改文件 = 多 rebase 冲突成本，收益为零
+- **性能疑虑以 release 为准**：debug 模式下动画/滚动/布局比 release 慢 5-10 倍，不要在 debug 下做性能优化判断。功能逻辑 bug 才值得在 debug 下排查
+
 ## 架构与设计决策
 
 - System Prompt 注入顺序：角色设定 → 记忆(`<memories>`) → 摘要(`<recent_chats>`) → 搜索说明 → 指令注入，全部通过 `_appendToSystemMessage` 追加到同一个 system message
@@ -40,6 +45,7 @@
 - F5 调试（DAP 协议）比终端 `flutter run` 多了保存自动热重载、断点、变量查看；原生配置（Manifest/Gradle）变更需全量重编译，Dart 代码改动秒级热重载
 - 首次 `flutter run` 编译 Kelivo 约 25 分钟（含 Gradle 依赖下载），后续走缓存只需几十秒
 - 调试手机：荣耀 Magic7 Pro (PTP-AN10)，Android 16 (API 36)，arm64。
+- 项目级 `.vscode/settings.json` 关闭了 `editor.formatOnSave`（防止格式化产生无关 diff），该目录通过 `.git/info/exclude` 本地排除，不影响仓库
 
 ## 已尝试但放弃的方案
 
