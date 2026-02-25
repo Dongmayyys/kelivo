@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/services/haptics.dart';
 import '../../../icons/lucide_adapter.dart';
+import '../../../core/providers/instruction_injection_provider.dart';
 import '../../../core/providers/settings_provider.dart';
 import '../../../core/providers/world_book_provider.dart';
 import '../../../l10n/app_localizations.dart';
@@ -223,18 +224,21 @@ class _LearningAndClearSectionState extends State<_LearningAndClearSection> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final settings = context.watch<SettingsProvider>();
+    final injectionProvider = context.watch<InstructionInjectionProvider>();
     final worldBookProvider = context.watch<WorldBookProvider>();
     final cs = Theme.of(context).colorScheme;
     final hasOcrModel =
         settings.ocrModelProvider != null && settings.ocrModelId != null;
     final hasWorldBooks = worldBookProvider.books.isNotEmpty;
+    final injectionActive = injectionProvider.activeIdsFor(widget.assistantId).isNotEmpty;
+    final worldBookActive = hasWorldBooks && worldBookProvider.activeBookIdsFor(widget.assistantId).isNotEmpty;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         _row(
           icon: Lucide.Layers,
           label: l10n.instructionInjectionTitle,
-          selected: false,
+          selected: injectionActive,
           onTap: () async {
             Haptics.light();
             await showInstructionInjectionSheet(
@@ -265,7 +269,7 @@ class _LearningAndClearSectionState extends State<_LearningAndClearSection> {
           _row(
             icon: Lucide.BookOpen,
             label: l10n.worldBookTitle,
-            selected: false,
+            selected: worldBookActive,
             onTap: () async {
               Haptics.light();
               await showWorldBookSheet(
