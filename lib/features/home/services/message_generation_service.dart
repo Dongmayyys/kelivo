@@ -161,7 +161,12 @@ class MessageGenerationService {
     final worldBookTriggeredEntries = await messageBuilderService.injectWorldBookPrompts(
       apiMessages,
       assistantId,
+      assistant: assistant,
+      modelId: modelId,
     );
+
+    // Resolve placeholders in all injected content (system messages + world book entries)
+    messageBuilderService.resolveInjectedPlaceholders(apiMessages, assistant, modelId);
 
     // Apply context limit and inline images
     messageBuilderService.applyContextLimit(apiMessages, assistant);

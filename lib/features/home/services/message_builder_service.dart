@@ -405,18 +405,7 @@ class MessageBuilderService {
     String modelId,
   ) {
     if ((assistant?.systemPrompt.trim().isNotEmpty ?? false)) {
-      final vars = PromptTransformer.buildPlaceholders(
-        context: contextProvider,
-        assistant: assistant!,
-        modelId: modelId,
-        modelName: modelId,
-        userNickname: contextProvider.read<UserProvider>().name,
-      );
-      final sys = PromptTransformer.replacePlaceholders(
-        assistant.systemPrompt,
-        vars,
-      );
-      apiMessages.insert(0, {'role': 'system', 'content': sys});
+      apiMessages.insert(0, {'role': 'system', 'content': assistant!.systemPrompt});
     }
   }
 
@@ -550,8 +539,10 @@ class MessageBuilderService {
   /// Returns a list of triggered entry details for persistence.
   Future<List<Map<String, dynamic>>> injectWorldBookPrompts(
     List<Map<String, dynamic>> apiMessages,
-    String? assistantId,
-  ) async {
+    String? assistantId, {
+    Assistant? assistant,
+    String? modelId,
+  }) async {
     try {
       List<WorldBook> all = const <WorldBook>[];
       List<String> activeBookIds = const <String>[];
@@ -655,10 +646,13 @@ class MessageBuilderService {
 
       String wrapSystemTag(String content) => '<system>\n$content\n</system>';
 
+      final _wbVars = _buildPlaceholderVars(assistant, modelId);
+
       String joinContents(Iterable<WorldBookEntry> items) {
         return items
             .map((e) => e.content.trim())
             .where((c) => c.isNotEmpty)
+            .map((c) => PromptTransformer.resolveAll(c, _wbVars))
             .join('\n');
       }
 
@@ -816,6 +810,34 @@ class MessageBuilderService {
           ((apiMessages[0]['content'] ?? '') as String) + '\n\n' + content;
     } else {
       apiMessages.insert(0, {'role': 'system', 'content': content});
+    }
+  }
+
+  /// Build placeholder vars map from current context.
+  Map<String, String> _buildPlaceholderVars(Assistant? assistant, String? modelId) {
+    return PromptTransformer.buildPlaceholders(
+      context: contextProvider,
+      assistant: assistant,
+      modelId: modelId,
+      modelName: modelId,
+      userNickname: contextProvider.read<UserProvider>().name,
+    );
+  }
+
+  /// Resolve placeholders in injected content (system messages only).
+  void resolveInjectedPlaceholders(
+    List<Map<String, dynamic>> apiMessages,
+    Assistant? assistant,
+    String? modelId,
+  ) {
+    final vars = _buildPlaceholderVars(assistant, modelId);
+    for (final msg in apiMessages) {
+      if ((msg['role'] ?? '').toString() == 'system') {
+        final content = (msg['content'] ?? '').toString();
+        if (content.isNotEmpty) {
+          msg['content'] = PromptTransformer.resolveAll(content, vars);
+        }
+      }
     }
   }
 

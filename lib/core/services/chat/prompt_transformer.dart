@@ -6,7 +6,7 @@ import '../../providers/settings_provider.dart';
 class PromptTransformer {
   static Map<String, String> buildPlaceholders({
     required BuildContext context,
-    required Assistant assistant,
+    Assistant? assistant,
     required String? modelId,
     required String? modelName,
     required String userNickname,
@@ -34,7 +34,7 @@ class PromptTransformer {
       '{device_info}': device,
       '{battery_level}': battery,
       '{nickname}': userNickname,
-      '{assistant_name}': assistant.name,
+      '{assistant_name}': assistant?.name ?? '',
     };
   }
 
@@ -44,6 +44,41 @@ class PromptTransformer {
       out = out.replaceAll(k, v);
     });
     return out;
+  }
+
+  /// Resolve parameterized placeholders: {days_since:YYYY-MM-DD}, {days_until:YYYY-MM-DD}.
+  static String resolveDynamicPlaceholders(String text) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final daysSinceRe = RegExp(r'\{days_since:(\d{4}-\d{2}-\d{2})\}');
+    final daysUntilRe = RegExp(r'\{days_until:(\d{4}-\d{2}-\d{2})\}');
+
+    DateTime? tryParseDate(String s) {
+      final d = DateTime.tryParse(s);
+      if (d == null) return null;
+      // Reject auto-overflowed dates (e.g. 9999-99-99 parses but is invalid)
+      final norm = '${d.year.toString().padLeft(4, '0')}-'
+          '${d.month.toString().padLeft(2, '0')}-'
+          '${d.day.toString().padLeft(2, '0')}';
+      return norm == s ? d : null;
+    }
+
+    var result = text.replaceAllMapped(daysSinceRe, (match) {
+      final d = tryParseDate(match.group(1)!);
+      if (d == null) return match.group(0)!;
+      return today.difference(DateTime(d.year, d.month, d.day)).inDays.toString();
+    });
+    result = result.replaceAllMapped(daysUntilRe, (match) {
+      final d = tryParseDate(match.group(1)!);
+      if (d == null) return match.group(0)!;
+      return DateTime(d.year, d.month, d.day).difference(today).inDays.toString();
+    });
+    return result;
+  }
+
+  /// Resolve all placeholders: static {key} vars + parameterized {key:param}.
+  static String resolveAll(String text, Map<String, String> vars) {
+    return resolveDynamicPlaceholders(replacePlaceholders(text, vars));
   }
 
   // Very simple mustache-like replacement for message template variables
