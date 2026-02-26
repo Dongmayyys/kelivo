@@ -1973,6 +1973,18 @@ abstract class AppLocalizations {
   /// **'Assistant Name'**
   String get assistantEditVariableAssistantName;
 
+  /// No description provided for @assistantEditVariableDaysSince.
+  ///
+  /// In en, this message translates to:
+  /// **'Days since date'**
+  String get assistantEditVariableDaysSince;
+
+  /// No description provided for @assistantEditVariableDaysUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Days until date'**
+  String get assistantEditVariableDaysUntil;
+
   /// No description provided for @assistantEditMessageTemplateTitle.
   ///
   /// In en, this message translates to:

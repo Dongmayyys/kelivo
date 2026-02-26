@@ -1009,6 +1009,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantEditVariableAssistantName => 'Assistant Name';
 
   @override
+  String get assistantEditVariableDaysSince => 'Days since date';
+
+  @override
+  String get assistantEditVariableDaysUntil => 'Days until date';
+
+  @override
   String get assistantEditMessageTemplateTitle => 'Message Template';
 
   @override

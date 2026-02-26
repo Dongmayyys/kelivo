@@ -981,6 +981,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get assistantEditVariableAssistantName => '助手名称';
 
   @override
+  String get assistantEditVariableDaysSince => '距某日天数';
+
+  @override
+  String get assistantEditVariableDaysUntil => '距某日倒数';
+
+  @override
   String get assistantEditMessageTemplateTitle => '聊天内容模板';
 
   @override
@@ -5104,6 +5110,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get assistantEditVariableAssistantName => '助手名称';
 
   @override
+  String get assistantEditVariableDaysSince => '距某日天数';
+
+  @override
+  String get assistantEditVariableDaysUntil => '距某日倒数';
+
+  @override
   String get assistantEditMessageTemplateTitle => '聊天内容模板';
 
   @override
@@ -9173,6 +9185,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get assistantEditVariableAssistantName => '助理名稱';
+
+  @override
+  String get assistantEditVariableDaysSince => '距某日天數';
+
+  @override
+  String get assistantEditVariableDaysUntil => '距某日倒數';
 
   @override
   String get assistantEditMessageTemplateTitle => '聊天內容範本';

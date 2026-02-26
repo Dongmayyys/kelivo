@@ -277,6 +277,8 @@
   "assistantEditVariableBatteryLevel": "电池电量",
   "assistantEditVariableNickname": "用户昵称",
   "assistantEditVariableAssistantName": "助手名称",
+  "assistantEditVariableDaysSince": "距某日天数",
+  "assistantEditVariableDaysUntil": "距某日倒数",
   "assistantEditMessageTemplateTitle": "聊天内容模板",
   "assistantEditVariableRole": "角色",
   "assistantEditVariableMessage": "内容",
