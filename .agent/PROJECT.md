@@ -1,5 +1,5 @@
 # PROJECT: Kelivo
-> 生成时间: 2026-02-13  |  最后更新: 2026-02-24
+> 生成时间: 2026-02-13  |  最后更新: 2026-02-27
 
 ## 技术栈
 - Runtime: Flutter (Dart SDK ^3.8.1)
@@ -85,7 +85,7 @@ UI 层按**功能模块**组织 (`features/`)，桌面端 (`desktop/`) 与移动
 - 错误处理广泛使用 `try/catch(_) {}` 静默模式（避免崩溃，但不记录）
 
 ## Git 约定
-- 分支策略: upstream `origin/master` + 个人 fork `myfork/my-dev`，功能分支如 `fix/world-book-keyword-split-regex`
+- 分支策略: upstream `upstream/master` + 个人 fork `origin/my-dev`，功能分支如 `fix/world-book-keyword-split-regex`
 - Commit 格式: 中文，Conventional Commits 风格
   - `feat: 世界书关键词编辑 UI 优化`
   - `fix: 修复正则转义导致关键词拆分异常`
