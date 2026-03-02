@@ -1,5 +1,5 @@
 # PROJECT: Kelivo
-> 生成时间: 2026-02-13  |  最后更新: 2026-02-27
+> 最后更新: 2026-03-02
 
 ## 技术栈
 - Runtime: Flutter (Dart SDK ^3.8.1)
@@ -31,7 +31,7 @@
   - `lib/core/` → 核心层 (models / providers / services 三层)
     - `lib/core/models/` → 数据模型 (18 文件): conversation, chat_message, assistant, api_keys, world_book 等
     - `lib/core/providers/` → 状态管理 (16 ChangeNotifierProvider): settings, chat, mcp, tts, assistant, model 等
-    - `lib/core/services/` → 业务服务: API 调用, chat 引擎, MCP, search (15 个搜索引擎适配), TTS, 备份, 网络等
+    - `lib/core/services/` → 业务服务: API 调用 (ChatApiService + 7 个 provider 子文件), chat 引擎, MCP, search (15 个搜索引擎适配), TTS, 备份, 网络等
   - `lib/features/` → 功能模块 (14 个), 每个含独立的 pages/widgets
     - `assistant/` → AI 助手管理
     - `chat/` → 聊天核心 UI
@@ -85,7 +85,7 @@ UI 层按**功能模块**组织 (`features/`)，桌面端 (`desktop/`) 与移动
 - 错误处理广泛使用 `try/catch(_) {}` 静默模式（避免崩溃，但不记录）
 
 ## Git 约定
-- 分支策略: upstream `upstream/master` + 个人 fork `origin/my-dev`，功能分支如 `fix/world-book-keyword-split-regex`
+- 分支策略: upstream `upstream/master` + 个人 fork `origin/master`，功能分支如 `fix/world-book-keyword-split-regex`
 - Commit 格式: 中文，Conventional Commits 风格
   - `feat: 世界书关键词编辑 UI 优化`
   - `fix: 修复正则转义导致关键词拆分异常`

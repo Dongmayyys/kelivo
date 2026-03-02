@@ -1,5 +1,5 @@
 # LEARNINGS
-> 最后更新: 2026-02-27
+> 最后更新: 2026-03-02
 
 ## 开发范围
 
@@ -20,8 +20,12 @@
 - 备份完整性：`DataSync.prepareBackupFile` 导出 SharedPreferences 全量 snapshot（仅排除 5 个窗口状态 key）+ chats.json（含 toolEvents/geminiThoughtSigs）+ upload/ + images/ + avatars/，迁移签名不同的自编译版时数据无损
 - Debug/Release 共存方案：`build.gradle.kts` 中 debug buildType 设置 `applicationIdSuffix = ".dev"`，debug 版包名为 `com.psyche.kelivo.dev`，与正式版 `com.psyche.kelivo` 共存互不干扰。`AndroidManifest.xml` 的 `android:label` 改为 `@string/app_name` 资源引用，debug 显示 "Kelivo (Dev)"、release 显示 "Kelivo"
 - `main.dart` 的 `MaterialApp.title` 会在运行时通过 `Activity.setTaskDescription()` 覆盖 Manifest 的 app_name，导致多任务界面不显示 debug 后缀。已用 `kDebugMode` 三元表达式修复。桌面图标/系统设置仍读 Manifest（安装时写入，Flutter 碰不到）
-- `ChatApiService` 各后端对 system 消息的转换：OpenAI Chat Completions 原样保留 `role: system`；Responses API 提取为顶层 `instructions`；Anthropic 提取为顶层 `system`；Gemini 原生 API（`_sendGoogleStream`）原本遗漏了处理，system 消息被映射为 `user` 混入 `contents`，已修复为使用 Google 规范的 `systemInstruction` 字段（已提交 PR）
-- 上游 `v1.1.8` 后拆分了两个大文件：`assistant_settings_edit_page.dart`（6000+ 行）拆成 6 个 `part` 文件（`_basic_tab`/`_prompt_tab`/`_memory_tab`/`_quick_phrase_tab`/`_custom_request_tab`/`_mcp_tab`）；`desktop_settings_page.dart`（10000+ 行）拆成 4 个 pane 文件。rebase 时涉及这些文件的改动需手动适配到新位置
+- `ChatApiService` 各后端对 system 消息的转换：OpenAI Chat Completions 原样保留 `role: system`；Responses API 提取为顶层 `instructions`；Anthropic 提取为顶层 `system`；Gemini 原生 API 使用 `systemInstruction` 字段（上游已合入修复）
+- `ChatApiService` 上游已拆分为 provider 子文件（`part of` 模式）：`claude_official.dart`、`google_common.dart`、`google_gemini.dart`、`google_vertex.dart`、`openai_common.dart`、`openai_chat_completions.dart`、`openai_responses.dart`。同时新增 `model_types.dart`（ModelInfo 提取到独立文件）、`model_override_payload_parser.dart`、`model_override_resolver.dart` 集中化 override 逻辑。改代码时注意对应到正确的 provider 文件
+- Claude 推理强度 UI 映射：Off=0, Auto=-1, Light=1024, Medium=16000, Heavy=32000。"自动"(-1) 在 Claude 4.6 模型发送 `thinking.type: 'adaptive'`（模型自行决定是否/如何思考），在老版本 Claude 发送 `'enabled'` 且不带 budget（由 API 默认分配）
+- 上游多次拆分大文件：`assistant_settings_edit_page.dart`（6000+ 行）→ 6 个 `part` 文件；`desktop_settings_page.dart`（10000+ 行）→ 4 个 pane 文件；`chat_api_service.dart`（6000+ 行）→ 7 个 provider 文件。rebase 时涉及这些文件的改动需手动适配到新位置
+- Token 统计完全依赖 API 返回的 `usage` 字段，无本地 tokenizer。`TokenUsage`（纯内存类）在流式中对 prompt/completion 各自取 max，然后 `total = prompt + completion` 自己算（不用 API 原始 total），这是对多后端流式 chunk 报告不一致的防御策略。最终只有 `ChatMessage.totalTokens`（`int?`）通过 Hive 持久化，prompt/completion 分项不保留
+- 消息编辑"保存并发送"：`appendMessageVersion` 在同一 `groupId` 下创建新版本（不覆盖原消息），UI 通过版本切换器浏览历史。对 assistant 消息使用 `assistantAsNewReply: true` 走 `regenerateAtMessage`，以编辑后内容为历史上下文生成新回复。**没有额外的"续写"prompt**——API 收到以编辑后的 assistant 消息结尾的对话，模型自行决定行为
 
 ## 代码陷阱与注意事项
 
@@ -48,7 +52,8 @@
 ## 环境与工具
 
 - fork 仓库 CI：自编译 APK 签名与官方版不同，Android 不允许不同签名覆盖安装，切换版本需备份 → 卸载 → 安装 → 恢复
-- GitHub Actions 构建 Android arm64：`flutter build apk --release --split-per-abi --target-platform android-arm64` 只编译 arm64 架构，时间和产物体积均为全架构的 1/3。`build-my-dev.yml` 仅配置了 `workflow_dispatch`，push 不会自动触发编译
+- GitHub Actions 构建 Android arm64：`flutter build apk --release --split-per-abi --target-platform android-arm64` 只编译 arm64 架构，时间和产物体积均为全架构的 1/3。`build-my-dev.yml` 仅配置了 `workflow_dispatch`，push 不会自动触发编译。**注意**：分支已从 `my-dev` 迁移到 `master`，CI workflow 文件名和触发分支可能需要同步更新
+- **上游 PR 行为**：维护者倾向于不直接 merge PR，而是自己重写相同修复后提交（如 systemInstruction 修复和 chip 溢出修复均如此）。rebase 时 Git 会自动跳过这些已被上游覆盖的 commit
 - 本地开发环境路径：Flutter SDK `D:\develop\flutter`、Android SDK `D:\develop\Android\Sdk`、JDK 17 `D:\develop\jdk-17`（绿色版，从 Adoptium MSI 迁移）
 - Android SDK 无需安装 Android Studio：下载 "Command line tools only" zip，用 `sdkmanager` 安装 `platform-tools` + `platforms;android-36` + `build-tools;35.0.0` + `ndk;27.0.12077973`
 - Gradle 8.12 需要 JDK 17 LTS，通过用户级环境变量 `JAVA_HOME = D:\develop\jdk-17` 指定（绿色版，直接复制文件夹即可使用，不依赖注册表和 PATH）
