@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import '../../../core/models/chat_input_data.dart';
@@ -247,6 +248,11 @@ class ChatActions {
         settings: settings,
       );
 
+      // Persist world book triggered entries to message metadata
+      if (prepared.worldBookTriggeredEntries.isNotEmpty) {
+        await _persistWorldBookMetadata(assistantMessage.id, prepared.worldBookTriggeredEntries);
+      }
+
       // Execute generation
       final ctx = messageGenerationService.buildGenerationContext(
         assistantMessage: assistantMessage,
@@ -375,7 +381,7 @@ class ChatActions {
     // Prepare API messages
     final prepared = await messageGenerationService
         .prepareApiMessagesWithInjections(
-          messages: _messages,
+          messages: chatService.getMessages(conversation.id),
           versionSelections: _versionSelections,
           currentConversation: conversation,
           settings: settings,
@@ -391,6 +397,11 @@ class ChatActions {
       lastUserImagePaths: prepared.lastUserImagePaths,
       settings: settings,
     );
+
+    // Persist world book triggered entries to message metadata
+    if (prepared.worldBookTriggeredEntries.isNotEmpty) {
+      await _persistWorldBookMetadata(assistantMessage.id, prepared.worldBookTriggeredEntries);
+    }
 
     // Execute generation
     final ctx = messageGenerationService.buildGenerationContext(
@@ -1036,5 +1047,31 @@ class ChatActions {
         immediate: true,
       );
     } catch (_) {}
+  }
+
+  /// Persist world book triggered entries to the assistant message's metadata
+  /// and sync the updated message to chatController so the UI sees it immediately.
+  Future<void> _persistWorldBookMetadata(
+    String assistantMessageId,
+    List<Map<String, dynamic>> entries,
+  ) async {
+    final metadata = jsonEncode({
+      'worldBook': {
+        'count': entries.length,
+        'entries': entries,
+      },
+    });
+    await chatService.updateMessage(
+      assistantMessageId,
+      metadataJson: metadata,
+    );
+    // Sync to chatController's in-memory message list for immediate UI display
+    final idx = chatController.messages.indexWhere((m) => m.id == assistantMessageId);
+    if (idx != -1) {
+      chatController.updateMessageInList(
+        assistantMessageId,
+        chatController.messages[idx].copyWith(metadataJson: metadata),
+      );
+    }
   }
 }

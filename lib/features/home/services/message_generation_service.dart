@@ -28,6 +28,7 @@ class PreparedGeneration {
   final Future<String> Function(String, Map<String, dynamic>)? onToolCall;
   final bool hasBuiltInSearch;
   final List<String> lastUserImagePaths;
+  final List<Map<String, dynamic>> worldBookTriggeredEntries;
 
   PreparedGeneration({
     required this.apiMessages,
@@ -35,6 +36,7 @@ class PreparedGeneration {
     this.onToolCall,
     required this.hasBuiltInSearch,
     required this.lastUserImagePaths,
+    this.worldBookTriggeredEntries = const [],
   });
 }
 
@@ -156,10 +158,15 @@ class MessageGenerationService {
       apiMessages,
       assistantId,
     );
-    await messageBuilderService.injectWorldBookPrompts(
+    final worldBookTriggeredEntries = await messageBuilderService.injectWorldBookPrompts(
       apiMessages,
       assistantId,
+      assistant: assistant,
+      modelId: modelId,
     );
+
+    // Resolve placeholders in all injected content (system messages + world book entries)
+    messageBuilderService.resolveInjectedPlaceholders(apiMessages, assistant, modelId);
 
     // Apply context limit and inline images
     messageBuilderService.applyContextLimit(apiMessages, assistant);
@@ -183,6 +190,7 @@ class MessageGenerationService {
       onToolCall: onToolCall,
       hasBuiltInSearch: hasBuiltInSearch,
       lastUserImagePaths: lastUserImagePaths,
+      worldBookTriggeredEntries: worldBookTriggeredEntries,
     );
   }
 

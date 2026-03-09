@@ -18,6 +18,9 @@ class ChatController extends ChangeNotifier {
 
   final ChatService _chatService;
 
+  /// Number of messages to load per page.
+  static const int _messagePageSize = 50;
+
   // ============================================================================
   // State Fields
   // ============================================================================
@@ -29,6 +32,9 @@ class ChatController extends ChangeNotifier {
   /// Messages in the current conversation.
   List<ChatMessage> _messages = [];
   List<ChatMessage> get messages => _messages;
+
+  /// All message IDs for the current conversation (snapshot for pagination).
+  List<String> _allMessageIds = [];
 
   /// Selected version per message group (groupId -> selected version index).
   Map<String, int> _versionSelections = <String, int>{};
@@ -62,16 +68,53 @@ class ChatController extends ChangeNotifier {
   // Conversation Management
   // ============================================================================
 
-  /// Set the current conversation and load its messages.
+  /// Whether there are more (older) messages that can be loaded.
+  bool get hasMoreMessages => _messages.length < _allMessageIds.length;
+
+  /// Set the current conversation and load its recent messages (paginated).
   void setCurrentConversation(Conversation? conversation) {
     _currentConversation = conversation;
     if (conversation != null) {
-      _messages = List.of(_chatService.getMessages(conversation.id));
+      _allMessageIds = List.of(conversation.messageIds);
+      _loadRecentMessages();
       _loadVersionSelections();
     } else {
+      _allMessageIds = [];
       _messages = [];
       _versionSelections = <String, int>{};
     }
+    notifyListeners();
+  }
+
+  /// Load only the most recent page of messages.
+  void _loadRecentMessages() {
+    final total = _allMessageIds.length;
+    final startIndex = (total - _messagePageSize).clamp(0, total);
+    final recentIds = _allMessageIds.sublist(startIndex);
+    _messages = _chatService.getMessagesByIds(recentIds);
+  }
+
+  /// Load the next batch of older messages, prepending to the current list.
+  /// Returns the number of newly loaded messages (for scroll compensation).
+  int loadMoreMessages() {
+    if (!hasMoreMessages) return 0;
+    final loaded = _messages.length;
+    final total = _allMessageIds.length;
+    final alreadyLoadedFrom = total - loaded;
+    final nextBatchStart = (alreadyLoadedFrom - _messagePageSize).clamp(0, total);
+    final nextBatchIds = _allMessageIds.sublist(nextBatchStart, alreadyLoadedFrom);
+    final olderMessages = _chatService.getMessagesByIds(nextBatchIds);
+    _messages = [...olderMessages, ..._messages];
+    notifyListeners();
+    return olderMessages.length;
+  }
+
+  /// Load all messages for the current conversation.
+  /// Call this before operations that need full message history
+  /// (API calls, fork, compress, etc.).
+  void loadAllMessages() {
+    if (!hasMoreMessages || _currentConversation == null) return;
+    _messages = List.of(_chatService.getMessages(_currentConversation!.id));
     notifyListeners();
   }
 
@@ -117,7 +160,7 @@ class ChatController extends ChangeNotifier {
     return conversation;
   }
 
-  /// Switch to an existing conversation.
+  /// Switch to an existing conversation (paginated).
   Future<void> switchConversation(String id) async {
     if (_currentConversation?.id == id) return;
 
@@ -125,7 +168,8 @@ class ChatController extends ChangeNotifier {
     final convo = _chatService.getConversation(id);
     if (convo != null) {
       _currentConversation = convo;
-      _messages = List.of(_chatService.getMessages(id));
+      _allMessageIds = List.of(convo.messageIds);
+      _loadRecentMessages();
       _loadVersionSelections();
       notifyListeners();
     }
@@ -222,9 +266,12 @@ class ChatController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Reload messages from storage.
+  /// Reload all messages from storage.
+  /// Used after delete or other mutations. Loads full list (not paginated)
+  /// since this is called infrequently and the caller needs consistency.
   void reloadMessages() {
     if (_currentConversation == null) return;
+    _allMessageIds = List.of(_currentConversation!.messageIds);
     _messages = List.of(_chatService.getMessages(_currentConversation!.id));
     notifyListeners();
   }

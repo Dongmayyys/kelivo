@@ -1979,6 +1979,18 @@ abstract class AppLocalizations {
   /// **'Assistant Name'**
   String get assistantEditVariableAssistantName;
 
+  /// No description provided for @assistantEditVariableDaysSince.
+  ///
+  /// In en, this message translates to:
+  /// **'Days since date'**
+  String get assistantEditVariableDaysSince;
+
+  /// No description provided for @assistantEditVariableDaysUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Days until date'**
+  String get assistantEditVariableDaysUntil;
+
   /// No description provided for @assistantEditMessageTemplateTitle.
   ///
   /// In en, this message translates to:
@@ -3082,6 +3094,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Citations ({count})'**
   String chatMessageWidgetCitationsTitle(int count);
+
+  /// No description provided for @chatMessageWidgetSearchCitationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Citations ({count})'**
+  String chatMessageWidgetSearchCitationsTitle(int count);
+
+  /// No description provided for @chatMessageWidgetWorldBookCitationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'World Book Citations ({count})'**
+  String chatMessageWidgetWorldBookCitationsTitle(int count);
 
   /// No description provided for @chatMessageWidgetRegenerateTooltip.
   ///

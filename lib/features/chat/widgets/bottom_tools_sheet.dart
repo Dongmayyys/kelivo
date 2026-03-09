@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/services/haptics.dart';
 import '../../../icons/lucide_adapter.dart';
+
 import '../../../core/providers/settings_provider.dart';
 import '../../../core/providers/world_book_provider.dart';
 import '../../../l10n/app_localizations.dart';

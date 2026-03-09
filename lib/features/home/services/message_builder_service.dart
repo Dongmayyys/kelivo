@@ -405,18 +405,7 @@ class MessageBuilderService {
     String modelId,
   ) {
     if ((assistant?.systemPrompt.trim().isNotEmpty ?? false)) {
-      final vars = PromptTransformer.buildPlaceholders(
-        context: contextProvider,
-        assistant: assistant!,
-        modelId: modelId,
-        modelName: modelId,
-        userNickname: contextProvider.read<UserProvider>().name,
-      );
-      final sys = PromptTransformer.replacePlaceholders(
-        assistant.systemPrompt,
-        vars,
-      );
-      apiMessages.insert(0, {'role': 'system', 'content': sys});
+      apiMessages.insert(0, {'role': 'system', 'content': assistant!.systemPrompt});
     }
   }
 
@@ -547,10 +536,13 @@ class MessageBuilderService {
   }
 
   /// Inject world book (lorebook) entries into apiMessages.
-  Future<void> injectWorldBookPrompts(
+  /// Returns a list of triggered entry details for persistence.
+  Future<List<Map<String, dynamic>>> injectWorldBookPrompts(
     List<Map<String, dynamic>> apiMessages,
-    String? assistantId,
-  ) async {
+    String? assistantId, {
+    Assistant? assistant,
+    String? modelId,
+  }) async {
     try {
       List<WorldBook> all = const <WorldBook>[];
       List<String> activeBookIds = const <String>[];
@@ -572,13 +564,13 @@ class MessageBuilderService {
         );
       }
 
-      if (all.isEmpty || activeBookIds.isEmpty) return;
+      if (all.isEmpty || activeBookIds.isEmpty) return const [];
 
       final activeSet = activeBookIds.toSet();
       final books = all
           .where((b) => b.enabled && activeSet.contains(b.id))
           .toList(growable: false);
-      if (books.isEmpty) return;
+      if (books.isEmpty) return const [];
 
       String extractContextForDepth(int scanDepth) {
         final depth = scanDepth <= 0 ? 1 : scanDepth;
@@ -624,7 +616,7 @@ class MessageBuilderService {
       }
 
       final contextCache = <int, String>{};
-      final triggered = <({WorldBookEntry entry, int seq})>[];
+      final triggered = <({WorldBookEntry entry, String bookName, int seq})>[];
       int seq = 0;
 
       for (final book in books) {
@@ -637,13 +629,13 @@ class MessageBuilderService {
             () => extractContextForDepth(depth),
           );
           if (isTriggered(entry, ctx)) {
-            triggered.add((entry: entry, seq: seq));
+            triggered.add((entry: entry, bookName: book.name, seq: seq));
           }
           seq++;
         }
       }
 
-      if (triggered.isEmpty) return;
+      if (triggered.isEmpty) return const [];
 
       triggered.sort((a, b) {
         final pa = a.entry.priority;
@@ -654,10 +646,13 @@ class MessageBuilderService {
 
       String wrapSystemTag(String content) => '<system>\n$content\n</system>';
 
+      final _wbVars = _buildPlaceholderVars(assistant, modelId);
+
       String joinContents(Iterable<WorldBookEntry> items) {
         return items
             .map((e) => e.content.trim())
             .where((c) => c.isNotEmpty)
+            .map((c) => PromptTransformer.resolveAll(c, _wbVars))
             .join('\n');
       }
 
@@ -795,7 +790,14 @@ class MessageBuilderService {
           );
         }
       }
-    } catch (_) {}
+      return triggered.map((t) => <String, dynamic>{
+        'name': t.entry.name,
+        'bookName': t.bookName,
+        'keywords': t.entry.keywords,
+      }).toList();
+    } catch (_) {
+      return const [];
+    }
   }
 
   /// Helper to append content to the system message (or create one if missing).
@@ -808,6 +810,34 @@ class MessageBuilderService {
           ((apiMessages[0]['content'] ?? '') as String) + '\n\n' + content;
     } else {
       apiMessages.insert(0, {'role': 'system', 'content': content});
+    }
+  }
+
+  /// Build placeholder vars map from current context.
+  Map<String, String> _buildPlaceholderVars(Assistant? assistant, String? modelId) {
+    return PromptTransformer.buildPlaceholders(
+      context: contextProvider,
+      assistant: assistant,
+      modelId: modelId,
+      modelName: modelId,
+      userNickname: contextProvider.read<UserProvider>().name,
+    );
+  }
+
+  /// Resolve placeholders in injected content (system messages only).
+  void resolveInjectedPlaceholders(
+    List<Map<String, dynamic>> apiMessages,
+    Assistant? assistant,
+    String? modelId,
+  ) {
+    final vars = _buildPlaceholderVars(assistant, modelId);
+    for (final msg in apiMessages) {
+      if ((msg['role'] ?? '').toString() == 'system') {
+        final content = (msg['content'] ?? '').toString();
+        if (content.isNotEmpty) {
+          msg['content'] = PromptTransformer.resolveAll(content, vars);
+        }
+      }
     }
   }
 

@@ -60,6 +60,6 @@ internationalization.md
 /lib/secrets/fallback.dart
 .claude/settings.local.json
 /.codex/
-/.agent/
 /.agents/
 /skills-lock.json
+

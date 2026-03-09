@@ -437,6 +437,8 @@
   "assistantEditVariableBatteryLevel": "Battery Level",
   "assistantEditVariableNickname": "Nickname",
   "assistantEditVariableAssistantName": "Assistant Name",
+  "assistantEditVariableDaysSince": "Days since date",
+  "assistantEditVariableDaysUntil": "Days until date",
   "assistantEditMessageTemplateTitle": "Message Template",
   "assistantEditVariableRole": "Role",
   "assistantEditVariableMessage": "Message",
@@ -674,6 +676,22 @@
   "chatMessageWidgetOpenLinkError": "Failed to open link",
   "chatMessageWidgetCitationsTitle": "Citations ({count})",
   "@chatMessageWidgetCitationsTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chatMessageWidgetSearchCitationsTitle": "Search Citations ({count})",
+  "@chatMessageWidgetSearchCitationsTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chatMessageWidgetWorldBookCitationsTitle": "World Book Citations ({count})",
+  "@chatMessageWidgetWorldBookCitationsTitle": {
     "placeholders": {
       "count": {
         "type": "int"

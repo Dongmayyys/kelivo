@@ -403,6 +403,9 @@ class HomeViewModel extends ChangeNotifier {
 
   /// Fork conversation at a specific message.
   Future<void> forkConversation(ChatMessage message) async {
+    // Ensure all messages are loaded before forking
+    _chatController.loadAllMessages();
+
     // Determine included groups up to the message's group (inclusive)
     final Map<String, int> groupFirstIndex = <String, int>{};
     final List<String> groupOrder = <String>[];
@@ -464,6 +467,9 @@ class HomeViewModel extends ChangeNotifier {
   Future<String?> compressContext() async {
     final convo = currentConversation;
     if (convo == null) return 'no_conversation';
+
+    // Ensure all messages are loaded before compressing
+    _chatController.loadAllMessages();
 
     // Get messages and collapse to selected versions
     final allMsgs = _chatController.messages;

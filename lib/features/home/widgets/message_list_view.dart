@@ -96,6 +96,8 @@ class MessageListView extends StatelessWidget {
     this.onToggleTranslation,
     this.onToggleReasoningSegment,
     this.buildPinnedStreamingIndicator,
+    this.hasMoreMessages = false,
+    this.onLoadMore,
   });
 
   final ScrollController scrollController;
@@ -142,6 +144,11 @@ class MessageListView extends StatelessWidget {
   final void Function(String messageId, int segmentIndex)?
   onToggleReasoningSegment;
   final Widget Function()? buildPinnedStreamingIndicator;
+
+  /// Whether there are older messages that can be loaded.
+  final bool hasMoreMessages;
+  /// Called when user taps "load more" to fetch older messages.
+  final VoidCallback? onLoadMore;
 
   /// Collapse message versions to show only selected version per group.
   List<ChatMessage> _collapseVersions(List<ChatMessage> items) {
@@ -240,6 +247,10 @@ class MessageListView extends StatelessWidget {
       truncCollapsed = count - 1;
     }
 
+    // When there are more messages, add one extra item at the top for the
+    // "load more" indicator.
+    final int extraItems = hasMoreMessages ? 1 : 0;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final horizontalPad =
@@ -251,21 +262,28 @@ class MessageListView extends StatelessWidget {
           builder: (context, isProcessing, child) {
             final list = ListView.builder(
               controller: scrollController,
+              reverse: true,
               padding: EdgeInsets.fromLTRB(
                 horizontalPad,
                 8,
                 horizontalPad,
                 isPinnedIndicatorActive ? 28 : 16,
               ),
-              itemCount: collapsedMessages.length,
+              itemCount: collapsedMessages.length + extraItems,
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               itemBuilder: (context, index) {
-                if (index < 0 || index >= collapsedMessages.length) {
+                // "Load more" button at the physical top (highest index in reverse list)
+                if (hasMoreMessages && index == collapsedMessages.length) {
+                  return _buildLoadMoreIndicator(context);
+                }
+                // Reverse mapping: index 0 = newest (bottom), higher index = older (top)
+                final msgIndex = collapsedMessages.length - 1 - index;
+                if (msgIndex < 0 || msgIndex >= collapsedMessages.length) {
                   return const SizedBox.shrink();
                 }
                 return _buildMessageItem(
                   context,
-                  index: index,
+                  index: msgIndex,
                   messages: collapsedMessages,
                   byGroup: byGroup,
                   truncCollapsed: truncCollapsed,
@@ -285,6 +303,31 @@ class MessageListView extends StatelessWidget {
           },
         );
       },
+    );
+  }
+
+  /// Build a tappable indicator at the top of the list to load older messages.
+  Widget _buildLoadMoreIndicator(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: TextButton.icon(
+          onPressed: onLoadMore,
+          icon: Icon(Icons.expand_less, size: 18, color: cs.primary),
+          label: Text(
+            'Load earlier messages',
+            style: TextStyle(fontSize: 13, color: cs.primary),
+          ),
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(color: cs.outlineVariant.withOpacity(0.5)),
+            ),
+          ),
+        ),
+      ),
     );
   }
 

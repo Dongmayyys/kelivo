@@ -396,6 +396,8 @@ class _PromptTabState extends State<_PromptTab> {
                 (l10n.assistantEditVariableBatteryLevel, '{battery_level}'),
                 (l10n.assistantEditVariableNickname, '{nickname}'),
                 (l10n.assistantEditVariableAssistantName, '{assistant_name}'),
+                (l10n.assistantEditVariableDaysSince, '{days_since:YYYY-MM-DD}'),
+                (l10n.assistantEditVariableDaysUntil, '{days_until:YYYY-MM-DD}'),
               ],
               onTapVar: (v) {
                 _insertAtCursor(_sysCtrl, v);
