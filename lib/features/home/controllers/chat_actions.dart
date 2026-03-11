@@ -224,6 +224,9 @@ class ChatActions {
       enableReasoning: enableReasoning,
     );
 
+    // Ensure all messages are loaded before building API context
+    chatController.loadAllMessages();
+
     // Prepare API messages
     messageGenerationService.onFileProcessingStarted = onFileProcessingStarted;
     messageGenerationService.onFileProcessingFinished =

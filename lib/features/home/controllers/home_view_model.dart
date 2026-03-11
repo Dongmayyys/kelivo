@@ -637,6 +637,9 @@ class HomeViewModel extends ChangeNotifier {
     String Function(String, String) withCountFormatter,
     String defaultLabel,
   ) {
+    // Ensure all messages are loaded for accurate count
+    _chatController.loadAllMessages();
+
     final assistant = _contextProvider
         .read<AssistantProvider>()
         .currentAssistant;

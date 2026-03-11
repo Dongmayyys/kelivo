@@ -538,6 +538,7 @@ class HomePageController extends ChangeNotifier {
     try {
       await WidgetsBinding.instance.endOfFrame;
     } catch (_) {}
+    _chatController.loadAllMessages();
     if (messageId.isNotEmpty) {
       await scrollToMessageId(messageId);
       _spotlightMessageId = messageId;
@@ -926,6 +927,7 @@ class HomePageController extends ChangeNotifier {
   }
 
   void selectAll() {
+    _chatController.loadAllMessages();
     final collapsed = collapseVersions(messages);
     for (final m in collapsed) {
       if (m.role == 'user' || m.role == 'assistant') {
@@ -936,6 +938,7 @@ class HomePageController extends ChangeNotifier {
   }
 
   void toggleSelectAll() {
+    _chatController.loadAllMessages();
     final collapsed = collapseVersions(messages);
     final selectable = collapsed
         .where((m) => m.role == 'user' || m.role == 'assistant')
@@ -956,6 +959,7 @@ class HomePageController extends ChangeNotifier {
   }
 
   void invertSelection() {
+    _chatController.loadAllMessages();
     final collapsed = collapseVersions(messages);
     for (final m in collapsed) {
       if (m.role != 'user' && m.role != 'assistant') continue;
