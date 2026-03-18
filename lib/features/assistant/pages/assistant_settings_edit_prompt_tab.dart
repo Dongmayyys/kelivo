@@ -289,19 +289,12 @@ class _PromptTabState extends State<_PromptTab> {
 
     String processed(String tpl) {
       final t = (tpl.trim().isEmpty ? '{{ message }}' : tpl);
-      // Simple replacements consistent with PromptTransformer
-      final locale = Localizations.localeOf(context);
-      final dateStr = locale.languageCode == 'zh'
-          ? DateFormat('yyyy年M月d日', 'zh').format(now)
-          : DateFormat('yyyy-MM-dd').format(now);
-      final timeStr = locale.languageCode == 'zh'
-          ? DateFormat('a h:mm:ss', 'zh').format(now)
-          : DateFormat('HH:mm:ss').format(now);
-      return t
-          .replaceAll('{{ role }}', 'user')
-          .replaceAll('{{ message }}', sampleMsg)
-          .replaceAll('{{ time }}', timeStr)
-          .replaceAll('{{ date }}', dateStr);
+      return PromptTransformer.applyMessageTemplate(
+        t,
+        role: 'user',
+        message: sampleMsg,
+        now: now,
+      );
     }
 
     // System Prompt Card (no border, iOS style)
@@ -396,6 +389,14 @@ class _PromptTabState extends State<_PromptTab> {
                 (l10n.assistantEditVariableBatteryLevel, '{battery_level}'),
                 (l10n.assistantEditVariableNickname, '{nickname}'),
                 (l10n.assistantEditVariableAssistantName, '{assistant_name}'),
+                (
+                  l10n.assistantEditVariableDaysSince,
+                  '{days_since:YYYY-MM-DD}',
+                ),
+                (
+                  l10n.assistantEditVariableDaysUntil,
+                  '{days_until:YYYY-MM-DD}',
+                ),
               ],
               onTapVar: (v) {
                 _insertAtCursor(_sysCtrl, v);

@@ -747,6 +747,8 @@ class _HomePageState extends State<HomePage>
       streamingContentNotifier: _controller.streamingContentNotifier,
       spotlightMessageId: _controller.spotlightMessageId,
       spotlightToken: _controller.spotlightToken,
+      hasMoreMessages: _controller.hasMoreMessages,
+      onLoadMore: _controller.loadMoreMessages,
       onVersionChange: (groupId, version) async {
         await _controller.setSelectedVersion(groupId, version);
       },

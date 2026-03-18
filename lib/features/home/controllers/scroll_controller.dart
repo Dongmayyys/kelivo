@@ -82,10 +82,11 @@ class ChatScrollController {
   // ============================================================================
 
   /// Check if the scroll position is near the bottom.
+  /// Reverse ListView: bottom (newest) is at offset 0.
   bool isNearBottom([double tolerance = _autoScrollSnapTolerance]) {
     if (!_scrollController.hasClients) return true;
     final pos = _scrollController.position;
-    return (pos.maxScrollExtent - pos.pixels) <= tolerance;
+    return pos.pixels <= tolerance;
   }
 
   /// Check if the scroll view has enough content to scroll.
@@ -285,8 +286,8 @@ class ChatScrollController {
         return;
       }
       final pos = _scrollController.position;
-      final max = pos.maxScrollExtent;
-      final distance = (max - pos.pixels).abs();
+      // Reverse ListView: bottom (newest) is at offset 0
+      final distance = pos.pixels.abs();
       if (distance < 0.5) {
         if (_showJumpToBottom) {
           _showJumpToBottom = false;
@@ -295,7 +296,7 @@ class ChatScrollController {
         return;
       }
       if (!doAnimate) {
-        pos.jumpTo(max);
+        pos.jumpTo(0.0);
       } else {
         final durationMs = distance < 36
             ? 120
@@ -303,7 +304,7 @@ class ChatScrollController {
             ? 180
             : 240;
         await pos.animateTo(
-          max,
+          0.0,
           duration: Duration(milliseconds: durationMs),
           curve: Curves.easeOutCubic,
         );
@@ -321,27 +322,25 @@ class ChatScrollController {
   // ============================================================================
 
   /// Scroll to the top of the list.
+  /// Reverse ListView: top (oldest) is at maxScrollExtent.
   void scrollToTop({bool animate = true}) {
     try {
       if (!_scrollController.hasClients) return;
       _lastJumpUserMessageId = null;
       revealNavButtons();
 
+      final pos = _scrollController.position;
+      final max = pos.maxScrollExtent;
       if (animate) {
-        final pos = _scrollController.position;
-        final distance = pos.pixels;
-        final durationMs = distance < 200
-            ? 150
-            : distance < 800
-            ? 220
-            : 300;
+        final distance = (max - pos.pixels).abs();
+        final durationMs = distance < 200 ? 150 : distance < 800 ? 220 : 300;
         pos.animateTo(
-          0.0,
+          max,
           duration: Duration(milliseconds: durationMs),
           curve: Curves.easeOutCubic,
         );
       } else {
-        _scrollController.jumpTo(0.0);
+        _scrollController.jumpTo(max);
       }
     } catch (_) {}
   }
@@ -403,13 +402,14 @@ class ChatScrollController {
         }
       }
       if (target < 0) {
-        // No earlier user message; jump to top instantly
-        _scrollController.jumpTo(0.0);
+        // No earlier user message; jump to top (maxScrollExtent in reverse)
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
         _lastJumpUserMessageId = null;
         return;
       }
 
       // If target widget is not built yet (off-screen far above), page up until it is
+      // Reverse ListView: older messages are at higher offsets, so page up = increase offset
       const int maxAttempts = 12; // about 10 pages max
       for (int attempt = 0; attempt < maxAttempts; attempt++) {
         final tKey = messageKeys[messages[target].id];
@@ -417,26 +417,28 @@ class ChatScrollController {
         if (tCtx != null) {
           await Scrollable.ensureVisible(
             tCtx,
-            alignment: 0.08,
+            alignment: 0.92,
             duration: const Duration(milliseconds: 100),
             curve: Curves.easeOutCubic,
           );
           _lastJumpUserMessageId = messages[target].id;
           return;
         }
-        // Step up by ~85% of viewport height
+        // Step up by ~85% of viewport height (increase offset in reverse)
         final pos = _scrollController.position;
         final (_, listBottom) = getViewportBounds();
         final viewH = listBottom;
         final step = viewH * 0.85;
-        final newOffset = (pos.pixels - step) < 0 ? 0.0 : (pos.pixels - step);
+        final newOffset = (pos.pixels + step) > pos.maxScrollExtent
+            ? pos.maxScrollExtent
+            : (pos.pixels + step);
         if ((pos.pixels - newOffset).abs() < 1) break; // reached top
         _scrollController.jumpTo(newOffset);
         // Let the list build newly visible children
         await WidgetsBinding.instance.endOfFrame;
       }
       // Final fallback: go to top if still not found
-      _scrollController.jumpTo(0.0);
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
       _lastJumpUserMessageId = null;
     } catch (_) {}
   }
@@ -504,6 +506,7 @@ class ChatScrollController {
       }
 
       // If target widget is not built yet (off-screen far below), page down until it is
+      // Reverse ListView: newer messages are at lower offsets, so page down = decrease offset
       const int maxAttempts = 12;
       for (int attempt = 0; attempt < maxAttempts; attempt++) {
         final tKey = messageKeys[messages[target].id];
@@ -511,21 +514,21 @@ class ChatScrollController {
         if (tCtx != null) {
           await Scrollable.ensureVisible(
             tCtx,
-            alignment: 0.08,
+            alignment: 0.92,
             duration: const Duration(milliseconds: 100),
             curve: Curves.easeOutCubic,
           );
           _lastJumpUserMessageId = messages[target].id;
           return;
         }
-        // Step down by ~85% of viewport height
+        // Step down by ~85% of viewport height (decrease offset in reverse)
         final pos = _scrollController.position;
         final (_, listBottom) = getViewportBounds();
         final viewH = listBottom;
         final step = viewH * 0.85;
-        final newOffset = (pos.pixels + step) > pos.maxScrollExtent
-            ? pos.maxScrollExtent
-            : (pos.pixels + step);
+        final newOffset = (pos.pixels - step) < 0.0
+            ? 0.0
+            : (pos.pixels - step);
         if ((pos.pixels - newOffset).abs() < 1) break; // reached bottom
         _scrollController.jumpTo(newOffset);
         // Let the list build newly visible children
@@ -562,7 +565,7 @@ class ChatScrollController {
       if (tCtx != null) {
         await Scrollable.ensureVisible(
           tCtx,
-          alignment: 0.1,
+          alignment: 0.9,
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
         );
@@ -571,10 +574,11 @@ class ChatScrollController {
       }
 
       // Coarse jump based on index ratio to bring target into build range
+      // Reverse ListView: oldest (index 0) at maxScrollExtent, newest at 0
       final pos0 = _scrollController.position;
       final denom = (messages.length - 1).clamp(1, 1 << 30);
       final ratio = tIndex / denom;
-      final coarse = (pos0.maxScrollExtent * ratio).clamp(
+      final coarse = (pos0.maxScrollExtent * (1.0 - ratio)).clamp(
         0.0,
         pos0.maxScrollExtent,
       );
@@ -584,7 +588,7 @@ class ChatScrollController {
       if (tCtxAfterCoarse != null) {
         await Scrollable.ensureVisible(
           tCtxAfterCoarse,
-          alignment: 0.1,
+          alignment: 0.9,
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
         );
@@ -620,7 +624,7 @@ class ChatScrollController {
         if (ctx2 != null) {
           await Scrollable.ensureVisible(
             ctx2,
-            alignment: 0.1,
+            alignment: 0.9,
             duration: const Duration(milliseconds: 100),
             curve: Curves.easeOutCubic,
           );
@@ -629,7 +633,8 @@ class ChatScrollController {
         }
         final pos = _scrollController.position;
         final viewH = getViewHeight();
-        final step = viewH * 0.85 * (dirDown ? 1 : -1);
+        // Reverse ListView: down = decrease offset, up = increase offset
+        final step = viewH * 0.85 * (dirDown ? -1 : 1);
         double newOffset = pos.pixels + step;
         if (newOffset < 0) newOffset = 0;
         if (newOffset > pos.maxScrollExtent) newOffset = pos.maxScrollExtent;

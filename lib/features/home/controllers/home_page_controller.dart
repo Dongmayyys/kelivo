@@ -236,6 +236,33 @@ class HomePageController extends ChangeNotifier {
 
   ValueNotifier<bool> get isProcessingFiles => _viewModel.isProcessingFiles;
 
+  /// Whether there are older messages that can be loaded.
+  bool get hasMoreMessages => _chatController.hasMoreMessages;
+
+  /// Load older messages. Reverse ListView anchors viewport at bottom (offset 0),
+  /// so prepending older messages to the top requires no scroll compensation.
+  void loadMoreMessages() {
+    if (!hasMoreMessages) return;
+
+    final newCount = _chatController.loadMoreMessages();
+    if (newCount == 0) return;
+
+    // Restore UI state for newly loaded assistant messages (first newCount items)
+    for (int i = 0; i < newCount; i++) {
+      final m = messages[i];
+      if (m.role == 'assistant') {
+        _streamController.restoreMessageUiState(
+          m,
+          getToolEventsFromDb: (id) => _chatService.getToolEvents(id),
+          getGeminiThoughtSigFromDb: (id) =>
+              _chatService.getGeminiThoughtSignature(id),
+        );
+      }
+    }
+
+    notifyListeners();
+  }
+
   // ============================================================================
   // Initialization
   // ============================================================================
@@ -364,6 +391,8 @@ class HomePageController extends ChangeNotifier {
     _viewModel.onConversationSwitched = () {
       _restoreMessageUiState();
       _scrollToBottom(animate: false);
+      // Start background loading of remaining messages
+      _scheduleBackgroundMessageLoad();
     };
     _viewModel.onStreamFinished = () {
       // Trigger UI update when streaming finishes
@@ -378,6 +407,35 @@ class HomePageController extends ChangeNotifier {
       default:
         return '${l10n.generationInterrupted}: $error';
     }
+  }
+
+  /// After initial paginated load, progressively load remaining messages
+  /// in the background, one batch per frame. Reverse ListView anchors at bottom,
+  /// so new items appear at the physical top with zero flicker.
+  void _scheduleBackgroundMessageLoad() {
+    if (!_chatController.hasMoreMessages) return;
+    final targetConvoId = currentConversation?.id;
+    // Wait for first render + fade animation to finish
+    Future.delayed(const Duration(milliseconds: 300), () {
+      _backgroundLoadNextBatch(targetConvoId);
+    });
+  }
+
+  void _backgroundLoadNextBatch(String? targetConvoId) {
+    // Abort if conversation changed
+    if (currentConversation?.id != targetConvoId) return;
+    if (!_chatController.hasMoreMessages) return;
+
+    // Load one batch + restore UI state + notify
+    loadMoreMessages();
+
+    // Schedule next batch after this frame completes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_chatController.hasMoreMessages &&
+          currentConversation?.id == targetConvoId) {
+        _backgroundLoadNextBatch(targetConvoId);
+      }
+    });
   }
 
   void _initializeScrollController() {
@@ -488,6 +546,7 @@ class HomePageController extends ChangeNotifier {
     try {
       await WidgetsBinding.instance.endOfFrame;
     } catch (_) {}
+    _chatController.loadAllMessages();
     if (messageId.isNotEmpty) {
       await scrollToMessageId(messageId);
       _spotlightMessageId = messageId;
@@ -518,6 +577,7 @@ class HomePageController extends ChangeNotifier {
         _restoreMessageUiState();
         notifyListeners();
         _scrollToBottomSoon(animate: false);
+        _scheduleBackgroundMessageLoad();
       }
     }
   }
@@ -875,6 +935,7 @@ class HomePageController extends ChangeNotifier {
   }
 
   void selectAll() {
+    _chatController.loadAllMessages();
     final collapsed = collapseVersions(messages);
     for (final m in collapsed) {
       if (m.role == 'user' || m.role == 'assistant') {
@@ -885,6 +946,7 @@ class HomePageController extends ChangeNotifier {
   }
 
   void toggleSelectAll() {
+    _chatController.loadAllMessages();
     final collapsed = collapseVersions(messages);
     final selectable = collapsed
         .where((m) => m.role == 'user' || m.role == 'assistant')
@@ -905,6 +967,7 @@ class HomePageController extends ChangeNotifier {
   }
 
   void invertSelection() {
+    _chatController.loadAllMessages();
     final collapsed = collapseVersions(messages);
     for (final m in collapsed) {
       if (m.role != 'user' && m.role != 'assistant') continue;

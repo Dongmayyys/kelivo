@@ -1016,6 +1016,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantEditVariableAssistantName => 'Assistant Name';
 
   @override
+  String get assistantEditVariableDaysSince => 'Days since date';
+
+  @override
+  String get assistantEditVariableDaysUntil => 'Days until date';
+
+  @override
   String get assistantEditMessageTemplateTitle => 'Message Template';
 
   @override
@@ -1601,6 +1607,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String chatMessageWidgetCitationsTitle(int count) {
     return 'Citations ($count)';
+  }
+
+  @override
+  String chatMessageWidgetSearchCitationsTitle(int count) {
+    return 'Search Citations ($count)';
+  }
+
+  @override
+  String chatMessageWidgetWorldBookCitationsTitle(int count) {
+    return 'World Book Citations ($count)';
   }
 
   @override

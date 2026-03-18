@@ -102,6 +102,20 @@ class ChatService extends ChangeNotifier {
     return messages;
   }
 
+  /// Load specific messages by their IDs, preserving the order of [ids].
+  /// Unlike [getMessages], this does NOT populate the full messages cache.
+  List<ChatMessage> getMessagesByIds(List<String> ids) {
+    if (!_initialized) return [];
+    final messages = <ChatMessage>[];
+    for (final id in ids) {
+      final message = _messagesBox.get(id);
+      if (message != null) {
+        messages.add(message);
+      }
+    }
+    return messages;
+  }
+
   Future<Conversation> createConversation({
     String? title,
     String? assistantId,
@@ -590,6 +604,7 @@ class ChatService extends ChangeNotifier {
     DateTime? reasoningFinishedAt,
     String? translation,
     String? reasoningSegmentsJson,
+    String? metadataJson,
   }) async {
     if (!_initialized) return;
 
@@ -606,6 +621,7 @@ class ChatService extends ChangeNotifier {
       translation: translation,
       reasoningSegmentsJson:
           reasoningSegmentsJson ?? message.reasoningSegmentsJson,
+      metadataJson: metadataJson ?? message.metadataJson,
     );
 
     await _messagesBox.put(messageId, updatedMessage);
@@ -636,6 +652,7 @@ class ChatService extends ChangeNotifier {
     DateTime? reasoningFinishedAt,
     String? translation,
     String? reasoningSegmentsJson,
+    String? metadataJson,
   }) async {
     if (!_initialized) return;
 
@@ -652,6 +669,7 @@ class ChatService extends ChangeNotifier {
       translation: translation,
       reasoningSegmentsJson:
           reasoningSegmentsJson ?? message.reasoningSegmentsJson,
+      metadataJson: metadataJson ?? message.metadataJson,
     );
 
     await _messagesBox.put(messageId, updatedMessage);

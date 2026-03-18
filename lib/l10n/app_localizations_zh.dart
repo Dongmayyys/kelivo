@@ -988,6 +988,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get assistantEditVariableAssistantName => '助手名称';
 
   @override
+  String get assistantEditVariableDaysSince => '距某日天数';
+
+  @override
+  String get assistantEditVariableDaysUntil => '距某日倒数';
+
+  @override
   String get assistantEditMessageTemplateTitle => '聊天内容模板';
 
   @override
@@ -1556,6 +1562,16 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String chatMessageWidgetCitationsTitle(int count) {
     return '引用（共$count条）';
+  }
+
+  @override
+  String chatMessageWidgetSearchCitationsTitle(int count) {
+    return '搜索引用（共$count条）';
+  }
+
+  @override
+  String chatMessageWidgetWorldBookCitationsTitle(int count) {
+    return '世界书引用（共$count条）';
   }
 
   @override
@@ -5143,6 +5159,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get assistantEditVariableAssistantName => '助手名称';
 
   @override
+  String get assistantEditVariableDaysSince => '距某日天数';
+
+  @override
+  String get assistantEditVariableDaysUntil => '距某日倒数';
+
+  @override
   String get assistantEditMessageTemplateTitle => '聊天内容模板';
 
   @override
@@ -5711,6 +5733,16 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String chatMessageWidgetCitationsTitle(int count) {
     return '引用（共$count条）';
+  }
+
+  @override
+  String chatMessageWidgetSearchCitationsTitle(int count) {
+    return '搜索引用（共$count条）';
+  }
+
+  @override
+  String chatMessageWidgetWorldBookCitationsTitle(int count) {
+    return '世界书引用（共$count条）';
   }
 
   @override
@@ -9246,6 +9278,12 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get assistantEditVariableAssistantName => '助理名稱';
 
   @override
+  String get assistantEditVariableDaysSince => '距某日天數';
+
+  @override
+  String get assistantEditVariableDaysUntil => '距某日倒數';
+
+  @override
   String get assistantEditMessageTemplateTitle => '聊天內容範本';
 
   @override
@@ -9813,6 +9851,16 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String chatMessageWidgetCitationsTitle(int count) {
     return '引用（共$count條）';
+  }
+
+  @override
+  String chatMessageWidgetSearchCitationsTitle(int count) {
+    return '搜索引用（共$count條）';
+  }
+
+  @override
+  String chatMessageWidgetWorldBookCitationsTitle(int count) {
+    return '世界書引用（共$count條）';
   }
 
   @override

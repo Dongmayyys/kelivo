@@ -51,7 +51,12 @@ android {
     }
 
     buildTypes {
+        getByName("debug") {
+            applicationIdSuffix = ".dev"
+            resValue("string", "app_name", "Kelivo (Dev)")
+        }
         getByName("release") {
+            resValue("string", "app_name", "Kelivo")
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
